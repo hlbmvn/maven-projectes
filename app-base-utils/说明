@@ -1,0 +1,4 @@
+该模块为基础工具类模块
+部署
+deploy -Dmaven.test.skip=true
+install

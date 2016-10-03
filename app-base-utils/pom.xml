@@ -1,0 +1,87 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.hlb</groupId>
+  <artifactId>base_utils</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>base_utils</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  
+  <dependencies>
+	<!--使用slf4j来作为日志的处理-->
+	<dependency>  
+	    <groupId>org.slf4j</groupId>  
+	    <artifactId>slf4j-log4j12</artifactId>  
+	    <version>1.7.5</version>  
+	</dependency>
+	<!-- EXCEL POI start-->
+	<dependency>
+		<groupId>org.apache.poi</groupId>
+		<artifactId>poi</artifactId>
+		<version>3.10-FINAL</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.poi</groupId>
+		<artifactId>poi-ooxml</artifactId>
+		<version>3.10-FINAL</version>
+		<exclusions>
+			<exclusion>
+				<artifactId>xml-apis</artifactId>
+				<groupId>xml-apis</groupId>
+			</exclusion>
+		</exclusions>
+	</dependency>
+	<!-- EXCEL POI end-->
+	<dependency>
+		<groupId>commons-beanutils</groupId>
+		<artifactId>commons-beanutils</artifactId>
+		<version>1.8.3</version>
+	</dependency>
+	<!-- FTP 使用 -->
+	<dependency>
+	    <groupId>commons-net</groupId>
+	    <artifactId>commons-net</artifactId>
+	    <version>3.5</version>
+	</dependency>
+	
+	<!-- SFTP 使用 -->
+	<dependency>
+	    <groupId>com.jcraft</groupId>
+	    <artifactId>jsch</artifactId>
+	    <version>0.1.53</version>
+	</dependency>
+	
+	<dependency>
+		<groupId>org.apache.httpcomponents</groupId>
+		<artifactId>httpclient</artifactId>
+		<version>4.4</version>
+	</dependency>
+	
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  
+  <distributionManagement>
+  	<repository>
+  		<id>nexus</id>
+  		<name>local_release</name>
+  		<url>http://localhost:8081/nexus/content/repositories/releases/</url>
+  	</repository>
+  	<snapshotRepository>
+  		<id>nexus</id>
+  		<name>local_snapshot</name>
+  		<url>http://localhost:8081/nexus/content/repositories/snapshots/</url>
+  	</snapshotRepository>
+  </distributionManagement>
+</project>
