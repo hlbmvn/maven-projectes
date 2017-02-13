@@ -40,11 +40,24 @@ public class HttpUrlClient {
 			URL ur=null;
 			URLConnection connection=null;
 			try {
-				String condition=Map2String(parameters);
+				String condition = "";
+				if(parameters!=null){
+					condition = Map2String(parameters);
+				}
 				/*采取POST的方式进行数据的请求*/
 				if("POST".equalsIgnoreCase(method)){
 					ur=new URL(url);
 					connection=ur.openConnection();
+					
+					/**
+					 * 忽略https请求的证书
+					 * */
+					 if ("https".equalsIgnoreCase(ur.getProtocol())) {
+					      HttpsURLConnection husn = (HttpsURLConnection)connection;
+					      husn.setSSLSocketFactory(new BaseHttpSSLSocketFactory());
+					      husn.setHostnameVerifier(new BaseHttpSSLSocketFactory.TrustAnyHostnameVerifier());
+					  }
+					
 					connection.setDoOutput(true);
 					connection.setUseCaches(false);
 					OutputStream out = connection.getOutputStream();
@@ -52,10 +65,49 @@ public class HttpUrlClient {
 				}
 
 				if("GET".equalsIgnoreCase(method)){
-					ur=new URL(url+"?"+condition);
+					if("".equals(condition)){
+						ur=new URL(url);
+					}else{
+						ur=new URL(url+"?"+condition);
+					}
 					connection=ur.openConnection();
 				}
 				
+			long connectTime = connection.getConnectTimeout();
+				String contentEncoding = connection.getContentEncoding();
+				String connectType = connection.getContentType();
+				BufferedReader content=new BufferedReader(new InputStreamReader(connection.getInputStream(),encoding));
+				StringBuffer html=new StringBuffer();
+				String line="";
+				while((line=content.readLine())!=null){
+					html.append(line);
+				}
+				
+				response=new HttpUrlResponse();
+				response.setConnectTime(connectTime);
+				response.setContentEncoding(contentEncoding);
+				response.setContentType(connectType);
+				response.setHtmlContent(html.toString());
+			} catch (IOException e) {
+				System.out.println("链接url["+url+"]时失败");
+				e.printStackTrace();
+			}
+		return response;
+	}
+	
+	public static HttpUrlResponse sendData(String url,String encoding,String data){
+		HttpUrlResponse response= null;
+			URL ur=null;
+			URLConnection connection=null;
+			try {
+				/*采取POST的方式进行数据的请求*/
+					ur=new URL(url);
+					connection=ur.openConnection();
+					connection.setDoOutput(true);
+					connection.setUseCaches(false);
+					OutputStream out = connection.getOutputStream();
+					out.write(data.getBytes());
+
 				/**
 				 * 忽略https请求的证书
 				 * */

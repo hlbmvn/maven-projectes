@@ -23,8 +23,12 @@ public class TestMail {
 		
 		MailModel mail = new MailModel();
 		//发件人信息
-		mail.setSender("刘朋波<liupengbo@chinasofti.com>");
-		mail.setPassword("QQliu5689258");
+		//mail.setSender("刘朋波<liupengbo@chinasofti.com>");
+		//mail.setPassword("QQliu5689258");
+		
+		mail.setSender("1021006390@qq.com");
+		mail.setPassword("vvlqasciuteobcgj");
+		//mail.setPassword("vvlqasciuteobcgj");
 		
 		//邮件信息
 		mail.setSubject("邮件主题");
@@ -44,7 +48,7 @@ public class TestMail {
 		//收件人信息
 		Map<String,RecipientType> copyToSends = new HashMap<String, Message.RecipientType>();
 		copyToSends.put("李四<1021006390@qq.com>", RecipientType.TO);//收件人
-		copyToSends.put("liupengbo@chinasofti.com", RecipientType.CC);//抄送人
+		//copyToSends.put("liupengbo@chinasofti.com", RecipientType.CC);//抄送人
 		mail.setCopyToSends(copyToSends);
 
 		Message msg = MailUtils.sendMail(mail);
