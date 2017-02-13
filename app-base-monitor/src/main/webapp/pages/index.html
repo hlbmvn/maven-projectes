@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+<meta charset="UTF-8">
+<title>系统监控页面</title>
+<style type="text/css">
+	body{padding:0px;margin: 0px;}
+	.mon-row{padding: 5px;height: 300px;}
+	.mon-item{width: 49%;height: 300px;border: 1px solid #000;border-radius: 4px; }
+	.left{float: left;}
+	.right{float: right;}
+	
+	#SystemCPU1{width: 45%;height: 300px; float: left;}
+	#SystemCPU2{width: 54%;height: 300px;background: black; float: right;}
+	
+</style>
+<script type="text/javascript" src="assets/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="assets/echarts/echarts.js"></script>
+</head>
+<body>
+	<h2 align="center" style="padding: 0px;font-size: 25px;">XX 系统资源监</h2>
+	<!-- 系统流量模块 -->
+	<div class="mon-row">
+		<!-- 系统PV时刻实时显示 -->
+		<div id="SystemPV" class="mon-item left"></div>
+		<!-- 系统PV时刻半小时累计 -->
+		<div id="SystemPV1" class="mon-item right"></div>
+	</div>
+	
+	<!-- 系统CPU及磁盘占有率 -->
+	<div class="mon-row">
+		<!-- 系统CPU时刻实时显示 -->
+		<div id="SystemCPU" class="mon-item left">
+			<div id="SystemCPU1"></div>
+			<div id="SystemCPU2"></div>
+		</div>
+		<!-- 系统PV时刻半小时累计 -->
+		<div id="SystemDisk" class="mon-item right"></div>
+	</div>
+	
+	<!-- 系统网络流量监控图 -->
+	<div class="mon-row">
+		<!-- 系统JVM内存监控 -->
+		<div id="SystemJVM" class="mon-item left"></div>
+		<!-- 系统网络流程监控 -->
+		<div id="SystemMemory" class="mon-item right"></div>
+	</div>
+	
+<script type="text/javascript">
+	//基于准备好的dom，初始化echarts实例
+	var pvChart = echarts.init(document.getElementById('SystemPV'));
+	var pvChart1 = echarts.init(document.getElementById('SystemPV1'));
+	var SystemCPU1 = echarts.init(document.getElementById('SystemCPU1'));
+	var SystemCPU2 = echarts.init(document.getElementById('SystemCPU2'));
+	var SystemDisk = echarts.init(document.getElementById('SystemDisk'));
+	var SystemJVM = echarts.init(document.getElementById('SystemJVM'));
+	var SystemMemory = echarts.init(document.getElementById('SystemMemory'));
+	//实时监控
+	var PVDATA_CNT = 30;
+	var pvData = [];//数据部分
+	var dat = new Date();
+
+	function randomData() {
+	    now = new Date(+now + oneDay);
+	    value = Math.random() * 10;
+	    return {
+	        name: now.toString(),
+	        value: [
+	            now,
+	            Math.round(value)
+	        ]
+	    }
+	}
+
+	var data = [];
+	var now = +new Date(1997, 9, 3);
+	var oneDay = 24 * 3600 * 1000;
+
+	option = {
+	    title: {
+	        text: '动态数据 + 时间坐标轴'
+	    },
+	    tooltip: {
+	        trigger: 'axis',
+	        axisPointer: {
+	            animation: false
+	        }
+	    },
+	    xAxis: {
+	        type: 'time',
+	        splitLine: {
+	            show: false
+	        }
+	    },
+	    yAxis: {
+	        type: 'value',
+	        boundaryGap: [0, '100%'],
+	        splitLine: {
+	            show: false
+	        }
+	    },
+	    series: [{
+	        name: '模拟数据',
+	        type: 'line',
+	        showSymbol: false,
+	        hoverAnimation: false,
+	        data: data
+	    }]
+	};
+
+	pvChart.setOption(option);
+	
+
+	pvOption = {
+		    title: {
+		        text: '监控系统PV流量实时监控'
+		    },
+		    legend: {
+		        data:['实时PV线']
+		    },
+		    tooltip: {
+		        trigger: 'axis',
+		        axisPointer: {
+		            animation: false
+		        }
+		    },
+		    xAxis: {
+		        type: 'time',
+		        splitLine: {
+		            show: true
+		        },
+		        name:'监测时间'
+		    },
+		    yAxis: {
+		        type: 'value',
+		        boundaryGap: [0, '100%'],
+		        splitLine: {
+		            show: true
+		        },
+		        name:'PV时刻流程数'
+		    },
+		    series: [{
+		        name: '实时PV线',
+		        type: 'line',
+		        showSymbol: false,
+		        hoverAnimation: false,
+		        data: pvData
+		    }]
+		};
+	
+
+		
+		setInterval(function () {
+			refreshPvData();
+		}, 1000);
+		
+		function refreshPvData(){
+			var date;
+			var dateStr;
+			var val = 0;
+			var len;
+			$.post("http://localhost:8080/base.monitor/MonitorServlet?type=01",function(data){
+				//获取参数长度	
+				var j = data.length;
+				var obj  = data[j-1];
+				len = pvData.length;
+				
+				for(var key in obj){
+					date = new Date(+key);
+					dateStr = key;
+					val = obj[key];
+					if(pvData[len-1] == undefined || key!=pvData[len-1].name){
+						if(len == PVDATA_CNT){
+							pvData.shift();
+						}
+
+						pvData.push({
+							name:key,
+							value:[date,val]
+						});	
+					}
+				}
+			    pvChart.setOption({
+			        series: [{
+			            data: pvData
+			        }]
+			    });
+			    
+			},"json");
+		}
+
+		//PV 半小时监控统计
+		var pvData1 = [];
+
+		pvOption1 = {
+			    title: {
+			        text: '监控系统PV流量半小时监控'
+			    },
+			    legend: {
+			        data:['PV半小时监控']
+			    },
+			    tooltip: {
+			        trigger: 'axis',
+			        axisPointer: {
+			            animation: false
+			        }
+			    },
+			    xAxis: {
+			        type: 'time',
+			        splitLine: {
+			            show: true
+			        },
+			        name:'监测时间'
+			    },
+			    yAxis: {
+			        type: 'value',
+			        boundaryGap: [0, '100%'],
+			        splitLine: {
+			            show: true
+			        },
+			        name:'PV时刻流程数'
+			    },
+			    series: [{
+			        name: 'PV半小时监控',
+			        type: 'line',
+			        showSymbol: false,
+			        hoverAnimation: false,
+			        data: pvData1
+			    }]
+			};
+			
+			pvChart1.setOption(pvOption1);
+
+			setInterval(function () {
+				refreshPvData1();
+			}, 5000);
+
+
+			function refreshPvData1(){
+				var date;
+				var val = 0;
+				$.post("http://localhost:8080/base.monitor/MonitorServlet?type=02",function(data){
+					//获取参数长度	
+					var j = data.length;
+					var i = pvData1.length;
+					var obj = data[j-1];
+					for(var key in obj){
+						date = new Date(+key);
+						val = obj[key];
+						if(i==0 || key!=pvData1[i-1].name){
+
+							if(i==0){
+								for(var k=48;k>0;k--){
+									var date1 = new Date(+key - k*30*60*1000);
+									pvData1.push({
+										name: (+key - k*30*60*1000),
+										value:[date1,0]
+									});
+								}	
+							}
+
+							pvData1.shift();
+														
+							pvData1.push({
+								name: key,
+								value:[new Date(+date),val]
+							});
+						}else{
+							pvData1[i-1] = {
+									name: key,
+									value:[new Date(+date),val]
+								};
+
+					    }
+						
+					}
+
+					pvChart1.setOption({
+				        series: [{
+				            data: pvData1
+				        }]
+				    });
+				    
+				},"json");
+			}
+		// CPU监控部分
+		cpuOption = {
+		    tooltip : {
+		        formatter: "{b} : {c}%"
+		    },
+		    series: [
+		        {
+		            name: 'CPU使用率',
+		            type: 'gauge',
+		            detail: {formatter:'{value}%'},
+		            data: [{value: 50, name: 'CPU使用率'}]
+		        }
+		    ]
+		};
+
+		//每一核的使用率
+		var cpuTitle = [];
+		var cpuCombined = [];
+		var cpuOption1 = {
+			    tooltip : {
+			        trigger: 'axis',
+			        axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+			            type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+			        }
+			    },
+			    legend: {
+			        data:['使用率']
+			    },
+			    grid: {
+			        left: '3%',
+			        right: '4%',
+			        bottom: '3%',
+			        containLabel: true
+			    },
+			    xAxis : [
+			        {
+			            type : 'value'
+			        }
+			    ],
+			    yAxis : [
+			        {
+			            type : 'category',
+			            axisTick : {show: false},
+			            data : cpuTitle
+			        }
+			    ],
+			    series : [
+			        {
+			            name:'使用率',
+			            type:'bar',
+			            label: {
+			                normal: {
+			                    show: true,
+			                    position: 'inside'
+			                }
+			            },
+			            data:cpuCombined
+			        }
+			    ],
+			    color:['green']
+			};
+			var cpuCnt = 0;
+			setInterval(function () {
+				$.post("http://localhost:8080/base.monitor/MonitorServlet?type=03",function(data){
+					//获取参数长度	
+					var combined = data.combined;
+					cpuOption.series[0].data[0].value = combined;
+				    SystemCPU1.setOption(cpuOption, true);
+					if(cpuCnt != data.cpus.length){
+						cpuCnt = data.cpus.length;
+						cpuTitle = [];
+						for(var i=0;i<cpuCnt;i++){
+							cpuTitle.push("第"+(i+1)+"核");
+						}
+						cpuOption1.yAxis[0].data = cpuTitle;
+					}
+				    cpuOption1.series[0].data = data.cpus;
+				    SystemCPU2.setOption(cpuOption1);
+				},"json");
+			},2000);
+
+			var diskTitle = [];
+			var diskOption = {
+				    title: {
+				        text: '磁盘使用率'
+				    },
+				    tooltip : {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:diskTitle
+				    },
+				    toolbox: {
+				        feature: {
+				            saveAsImage: {}
+				        }
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis : [
+				        {
+				            type : 'time'
+				        }
+				    ],
+				    yAxis : [
+				        {
+				            type : 'value'
+				        }
+				    ],
+				    series : []
+				};
+			var fileData = [];
+			setInterval(function () {
+				$.post("http://localhost:8080/base.monitor/MonitorServlet?type=04",function(data){
+					//获取参数长度	
+					diskTitle = [];
+					var diskPercent = [];
+					var len = data.length;
+					for(var i=0;i<len;i++){
+						diskTitle.push(data[i].fileName);
+						if(fileData[i]==undefined){
+							fileData[i] = [];
+						}
+						var percent = data[i].usedCnt/data[i].total*10000
+						percent = Math.round(percent);
+						fileData[i].push({name:data[i].time,value:[new Date(+data[i].time),percent/100]});
+						if(fileData[i].length>300){
+							fileData[i].shift();
+						}
+						
+						diskPercent.push({
+				            name:data[i].fileName,
+				            type:'line',
+				            areaStyle: {normal: {}},
+				            data:fileData[i]
+				        });
+				        
+					}
+					diskOption.legend.data = diskTitle;
+					diskOption.series=diskPercent;
+				    SystemDisk.setOption(diskOption);
+				},"json");
+			},30000);
+
+			//JVM 内存监控
+			var jvmData = [];
+			var jvmOption = {
+		    title: {
+		        text: 'JVM内存使用实时监控'
+		    },
+		    legend: {
+		        data:['JVM内存使用']
+		    },
+		    tooltip: {
+		        trigger: 'axis',
+		        axisPointer: {
+		            animation: false
+		        }
+		    },
+		    xAxis: {
+		        type: 'time',
+		        splitLine: {
+		            show: true
+		        },
+		        name:'监测时间'
+		    },
+		    yAxis: {
+		        type: 'value',
+		        boundaryGap: [0, '100%'],
+		        splitLine: {
+		            show: true
+		        },
+		        name:'JVM内存使用'
+		    },
+		    series: [{
+		        name: 'JVM内存使用',
+		        type: 'line',
+		        showSymbol: false,
+		        hoverAnimation: false,
+		        data: jvmData
+		    }]
+		};
+    	SystemJVM.setOption(jvmOption);
+    	setInterval(function () {
+			$.post("http://localhost:8080/base.monitor/MonitorServlet?type=05",function(data){
+				if(jvmData.length>300){
+					jvmData.shift();
+				}
+				var freeMemory = Math.round((data.totalMemory-data.freeMemory)/1024/1024*100)/100;
+				jvmData.push({name:data.time,value:[new Date(+data.time),freeMemory]});
+				SystemJVM.setOption({
+			        series: [{
+			            data: jvmData
+			        }]
+			    });
+			},"json");
+		},3000);
+
+    	//系统内存监控
+		var memoryData = [];
+		var memoryOption = {
+	    title: {
+	        text: '系统内存使用实时监控'
+	    },
+	    legend: {
+	        data:['系统内存使用']
+	    },
+	    tooltip: {
+	        trigger: 'axis',
+	        axisPointer: {
+	            animation: false
+	        }
+	    },
+	    xAxis: {
+	        type: 'time',
+	        splitLine: {
+	            show: true
+	        },
+	        name:'监测时间'
+	    },
+	    yAxis: {
+	        type: 'value',
+	        boundaryGap: [0, '100%'],
+	        splitLine: {
+	            show: true
+	        },
+	        name:'系统内存使用'
+	    },
+	    series: [{
+	        name: '系统内存使用',
+	        type: 'line',
+	        showSymbol: false,
+	        hoverAnimation: false,
+	        data: memoryData
+	    }]
+	};
+    SystemMemory.setOption(memoryOption);
+
+    setInterval(function () {
+		$.post("http://localhost:8080/base.monitor/MonitorServlet?type=06",function(data){
+			if(memoryData.length>300){
+				memoryData.shift();
+			}
+			var freeMemory = Math.round((data.Used)/1024/1024*100)/100;
+			memoryData.push({name:data.time,value:[new Date(+data.time),freeMemory]});
+			SystemMemory.setOption({
+		        series: [{
+		            data: memoryData
+		        }]
+		    });
+		},"json");
+	},3000);
+    
+</script>
+	
+</body>
+</html>
