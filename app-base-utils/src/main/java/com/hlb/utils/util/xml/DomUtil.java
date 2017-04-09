@@ -97,7 +97,7 @@ public class DomUtil {
 	 *            --格式良好的xml字符串
 	 * @return Document --w3c Dom对象,解析失败则抛出异常
 	 */
-	public static Document getDocumentByXmlString(String xmlString) throws Exception {
+	public static synchronized Document getDocumentByXmlString(String xmlString) throws Exception {
 		return docbuilder.parse(new InputSource(new StringReader(xmlString)));
 	}
 
@@ -483,6 +483,66 @@ public class DomUtil {
 		if (node.hasChildNodes()) {
 			parseXmlToMap1(prefix, node.getChildNodes(), mapStore);
 		}
+	}
+	
+	/**
+	 * 在A节点下找B
+	 * */
+	public static String getNodeValue (String nodeUrls,Node node,Map<String,String> nameSpace){
+		int index = nodeUrls.indexOf(">");
+		String urls = nodeUrls;
+		if(index!=-1){
+			urls = nodeUrls.substring(0,nodeUrls.indexOf(">"));
+		}
+
+		if(node.hasChildNodes()){//存在子节点
+			NodeList nodes = node.getChildNodes();
+			for(int i=0;i<nodes.getLength();i++){
+				Node childNode = nodes.item(i);
+				short nodeType = childNode.getNodeType(); 
+				if (nodeType == DomUtil.Text || nodeType == DomUtil.CDATA || nodeType == DomUtil.Comment) {
+					continue;
+				}
+				if(checkNodeEQ(nameSpace,urls,childNode)){
+					if(index!=-1){
+						String nodeUrl = nodeUrls.substring(index+1);
+						return getNodeValue(nodeUrl,childNode,nameSpace);
+					}else{
+						return childNode.getTextContent();
+					}
+				}
+			}
+		}else{
+			return null;
+		}
+		return null;
+	}
+	
+	
+	private static boolean checkNodeEQ(Map<String,String> namespaces,String url,Node node){
+		String nodeName;
+		String nodeNameSpace = null;
+		
+		String[] tmp = url.split(":");
+		if(tmp.length==2){
+			nodeNameSpace = namespaces.get(tmp[0]);
+			if(nodeNameSpace==null){
+				nodeNameSpace = tmp[0];
+			}
+			nodeName = tmp[1];
+		}else{
+			nodeName = tmp[0];
+		}
+		
+		if(node.getLocalName().equals(nodeName)){
+			if(node.getNamespaceURI()==null && nodeNameSpace==null){//均没有命名空间
+				return true;
+			}else if(node.getNamespaceURI()!=null && node.getNamespaceURI().equals(nodeNameSpace)){
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 }

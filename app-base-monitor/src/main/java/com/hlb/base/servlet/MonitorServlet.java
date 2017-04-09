@@ -28,6 +28,7 @@ import com.google.gson.Gson;
 import com.hlb.base.monitor.model.CPUModel;
 import com.hlb.base.monitor.model.FileModel;
 import com.hlb.utils.date.DateUtil;
+import com.hlb.utils.image.VerifyCodeUtils;
 
 /**
  * 用于获取监控资源的Servlet
@@ -171,6 +172,12 @@ public class MonitorServlet extends HttpServlet {
 			} catch (SigarException e) {
 				e.printStackTrace();
 			}
+		}else if("07".equals(type)){
+			response.setContentType("application/octet-stream");
+			String code = VerifyCodeUtils.generateVerifyCode(4);
+			System.out.println(code);
+			VerifyCodeUtils.genVerifyImage(100, 40, response.getOutputStream(), code);
+			return ;
 		}
 		response.getWriter().write(res);;
 	}
